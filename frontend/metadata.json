@@ -1,0 +1,6 @@
+{
+  "name": "SignalCheck — AI Evidence Investigation Platform",
+  "description": "Turn viral claims, screenshots, and conflicting information into evidence-backed investigations. Discover what is supported, what is disputed, and what remains unknown.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

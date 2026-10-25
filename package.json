@@ -1,0 +1,18 @@
+{
+  "name": "signalcheck-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "SignalCheck — India-First AI Fact-Checking Platform",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:all": "node scripts/dev.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "test:backend": "npm --prefix backend run test",
+    "test": "npm run test:backend"
+  }
+}
