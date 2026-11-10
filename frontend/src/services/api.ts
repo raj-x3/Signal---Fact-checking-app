@@ -16,7 +16,7 @@ export interface FactCheckParams {
 export async function requestFactCheck({
   claim,
   language = 'auto',
-  timeoutMs = 45000,
+  timeoutMs = 75000,
 }: FactCheckParams): Promise<BackendFactCheckResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);

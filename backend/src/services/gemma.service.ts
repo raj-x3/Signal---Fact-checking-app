@@ -87,14 +87,19 @@ Output MUST be strict JSON in this exact structure:
   "searchQueries": ["..."]
 }`;
 
-      const response = await this.ai!.models.generateContent({
-        model: this.primaryModel,
-        contents: prompt,
-        config: {
-          temperature: 0.1,
-          responseMimeType: 'application/json',
-        },
-      });
+      const response = await Promise.race([
+        this.ai!.models.generateContent({
+          model: this.primaryModel,
+          contents: prompt,
+          config: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
+          },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Gemma decomposition timed out after 8000ms`)), 8000)
+        ),
+      ]);
 
       const responseText = response.text?.trim() || '';
       const parsed = JSON.parse(responseText);
@@ -187,14 +192,19 @@ Output MUST be strict JSON in this exact structure:
   "unresolvedQuestions": ["..."]
 }`;
 
-      const response = await this.ai!.models.generateContent({
-        model: this.primaryModel,
-        contents: prompt,
-        config: {
-          temperature: 0.1,
-          responseMimeType: 'application/json',
-        },
-      });
+      const response = await Promise.race([
+        this.ai!.models.generateContent({
+          model: this.primaryModel,
+          contents: prompt,
+          config: {
+            temperature: 0.1,
+            responseMimeType: 'application/json',
+          },
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Gemma synthesis timed out after 10000ms`)), 10000)
+        ),
+      ]);
 
       const responseText = response.text?.trim() || '';
       const parsed = JSON.parse(responseText);

@@ -40,7 +40,7 @@ export class FactCheckService {
     const aggregatedResult = await this.providerAggregator.retrieveMultiSourceEvidence(
       decomposition.normalizedClaim,
       decomposition.searchQueries,
-      { language: decomposition.detectedLanguage }
+      { language: decomposition.detectedLanguage, timeoutMs: 5000 }
     );
 
     pipelineLogs.push(...aggregatedResult.logs);
