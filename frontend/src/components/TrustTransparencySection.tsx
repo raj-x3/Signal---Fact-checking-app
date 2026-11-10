@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -74,35 +75,42 @@ export const TrustTransparencySection: React.FC = () => {
 
         {/* 4 Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          {statuses.map((item) => {
+          {statuses.map((item, index) => {
             const ItemIcon = item.icon;
             return (
-              <div
+              <motion.div
                 key={item.title}
-                className={`rounded-3xl p-6 sm:p-7 border ${item.accent} transition-all duration-300 hover:-translate-y-1 shadow-[0_6px_25px_rgba(15,23,42,0.03)] bg-white`}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.35, delay: index * 0.08, ease: 'easeOut' }}
+                whileHover={{ y: -6, transition: { duration: 0.22, ease: 'easeOut' } }}
+                className={`rounded-3xl p-6 sm:p-7 border ${item.accent} transition-shadow duration-300 shadow-[0_6px_25px_rgba(15,23,42,0.03)] hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)] bg-white flex flex-col justify-between`}
               >
-                {/* Header with icon and status chip */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center shadow-2xs">
-                    <ItemIcon className={`w-5 h-5 ${item.iconColor}`} />
+                <div>
+                  {/* Header with icon and status chip */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 flex items-center justify-center shadow-2xs">
+                      <ItemIcon className={`w-5 h-5 ${item.iconColor}`} />
+                    </div>
+                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${item.badgeBg}`}>
+                      {item.title}
+                    </span>
                   </div>
-                  <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md border ${item.badgeBg}`}>
-                    {item.title}
-                  </span>
-                </div>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-2">
-                  {item.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
-                  {item.definition}
-                </p>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-4">
+                    {item.definition}
+                  </p>
+                </div>
 
                 <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500">
                   <span className="font-semibold text-slate-700">Audit Rule: </span>
                   {item.rule}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

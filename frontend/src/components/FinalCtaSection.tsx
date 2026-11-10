@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 
 interface FinalCtaSectionProps {
@@ -16,8 +17,13 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onStartInvesti
       <div className="hidden md:block absolute bottom-20 right-1/4 w-2.5 h-2.5 rounded-full bg-zinc-950/50" />
       <div className="hidden md:block absolute top-1/3 right-16 w-2 h-2 rounded-full bg-zinc-700/40" />
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
-        
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-50px' }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10"
+      >
         {/* Subtle Brand Tag */}
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 border border-slate-200/90 text-slate-800 text-xs font-semibold uppercase tracking-wider mb-6 shadow-xs backdrop-blur-xs">
           <ShieldCheck className="w-4 h-4 text-slate-700" />
@@ -37,15 +43,18 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onStartInvesti
           Make room for evidence. Understand the claim. Follow the sources.
         </p>
 
-        {/* Primary CTA */}
+        {/* Primary CTA with smooth spring hover */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 22 }}
             onClick={onStartInvestigation}
-            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] rounded-2xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 cursor-pointer"
+            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-2xl shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/35 transition-shadow duration-300 cursor-pointer"
           >
             <span>Start Your Investigation</span>
             <ArrowRight className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1" />
-          </button>
+          </motion.button>
         </div>
 
         {/* Micro-assurances */}
@@ -53,7 +62,7 @@ export const FinalCtaSection: React.FC<FinalCtaSectionProps> = ({ onStartInvesti
           No credit card or login required for demonstration investigation.
         </p>
 
-      </div>
+      </motion.div>
     </section>
   );
 };

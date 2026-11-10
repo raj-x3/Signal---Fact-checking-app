@@ -5,7 +5,7 @@
  * with colored terminal prefixes and clean shutdown handling.
  */
 
-import { spawn } from 'child_process';
+import { spawn, execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -16,12 +16,33 @@ const rootDir = path.resolve(__dirname, '..');
 const cyan = '\x1b[36m';
 const magenta = '\x1b[35m';
 const green = '\x1b[32m';
+const yellow = '\x1b[33m';
 const reset = '\x1b[0m';
 const bold = '\x1b[1m';
 
 console.log(`${bold}${green}======================================================${reset}`);
 console.log(`${bold}${green}  Starting SignalCheck Platform (Backend + Frontend)  ${reset}`);
 console.log(`${bold}${green}======================================================${reset}\n`);
+
+// Helper to free a port if an old zombie process is occupying it
+function freePortIfBusy(port) {
+  try {
+    const pids = execSync(`lsof -ti :${port}`, { encoding: 'utf8' }).trim().split('\n').filter(Boolean);
+    if (pids.length > 0) {
+      console.log(`${yellow}[dev-runner] Freeing busy port ${port} (killing PID: ${pids.join(', ')})...${reset}`);
+      for (const pid of pids) {
+        try {
+          process.kill(Number(pid), 'SIGKILL');
+        } catch (_) {}
+      }
+    }
+  } catch (_) {
+    // Port is free
+  }
+}
+
+// Ensure port 5001 is clean before starting
+freePortIfBusy(5001);
 
 // Start Backend
 const backend = spawn('npm', ['run', 'dev'], {

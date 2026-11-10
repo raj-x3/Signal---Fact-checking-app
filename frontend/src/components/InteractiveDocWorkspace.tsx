@@ -227,8 +227,8 @@ export const InteractiveDocWorkspace: React.FC = () => {
               dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
               dragElastic={0.16}
               dragTransition={{ bounceStiffness: 600, bounceDamping: 25 }}
-              whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative flex-1 p-[1.5px] rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-shadow duration-300 cursor-grab active:cursor-grabbing"
+              whileHover={{ y: -4, transition: { duration: 0.25, ease: 'easeOut' } }}
+              className="relative flex-1 p-[1.5px] rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.06)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.12)] transition-shadow duration-300 cursor-grab active:cursor-grabbing will-change-transform"
             >
               {/* Base dark neutral hairline track */}
               <div className="absolute inset-0 bg-zinc-200/90 pointer-events-none" />

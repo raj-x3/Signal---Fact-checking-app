@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Layers, Search, Compass, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 export const HowItWorksSection: React.FC = () => {
@@ -64,9 +65,14 @@ export const HowItWorksSection: React.FC = () => {
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               return (
-                <div
+                <motion.div
                   key={step.number}
-                  className="group relative bg-white/95 rounded-3xl p-8 border border-slate-200/90 shadow-[0_10px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] hover:border-zinc-400 hover:-translate-y-1.5 transition-all duration-300 backdrop-blur-xs flex flex-col justify-between"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.4, delay: index * 0.1, ease: 'easeOut' }}
+                  whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+                  className="group relative bg-white/95 rounded-3xl p-8 border border-slate-200/90 shadow-[0_10px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_45px_rgba(0,0,0,0.08)] hover:border-zinc-400 transition-all duration-300 backdrop-blur-xs flex flex-col justify-between"
                 >
                   {/* Black liquid top edge highlight on hover */}
                   <div className="absolute top-0 inset-x-8 h-0.5 bg-zinc-950 rounded-t-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -74,7 +80,7 @@ export const HowItWorksSection: React.FC = () => {
                   <div>
                     {/* Header: Number and Icon */}
                     <div className="flex items-center justify-between mb-6">
-                      <span className="font-mono text-3xl sm:text-4xl font-extrabold text-slate-200 group-hover:text-blue-500/30 transition-colors">
+                      <span className="font-mono text-3xl sm:text-4xl font-extrabold text-slate-200 group-hover:text-blue-500/30 transition-colors duration-300">
                         {step.number}
                       </span>
                       <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100/80 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-xs">
@@ -99,9 +105,9 @@ export const HowItWorksSection: React.FC = () => {
                   {/* Bottom Highlight */}
                   <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                     <span className="font-medium text-slate-700">{step.highlight}</span>
-                    <CheckCircle2 className="w-4 h-4 text-cyan-600 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <CheckCircle2 className="w-4 h-4 text-cyan-600 opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>

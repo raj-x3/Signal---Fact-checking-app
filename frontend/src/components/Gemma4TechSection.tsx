@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { 
   Cpu, 
   Layers, 
@@ -156,12 +157,17 @@ export const Gemma4TechSection: React.FC = () => {
 
         {/* 3 Core Capability Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {features.map((feature) => {
+          {features.map((feature, idx) => {
             const FeatIcon = feature.icon;
             return (
-              <div
+              <motion.div
                 key={feature.title}
-                className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ duration: 0.35, delay: idx * 0.1, ease: 'easeOut' }}
+                whileHover={{ y: -6, transition: { duration: 0.25, ease: 'easeOut' } }}
+                className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-sm hover:shadow-lg transition-shadow duration-300"
               >
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 mb-6 shadow-2xs">
                   <FeatIcon className="w-6 h-6" />
@@ -172,7 +178,7 @@ export const Gemma4TechSection: React.FC = () => {
                 <p className="text-sm text-slate-600 leading-relaxed">
                   {feature.description}
                 </p>
-              </div>
+              </motion.div>
             );
           })}
         </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, HelpCircle, Sparkles } from 'lucide-react';
 
 interface FaqItem {
@@ -59,18 +60,20 @@ export const FaqSection: React.FC = () => {
           </p>
         </div>
 
-        {/* Accordion List */}
+        {/* Accordion List with Smooth Height Transition */}
         <div className="space-y-3.5">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             return (
-              <div
+              <motion.div
                 key={faq.question}
-                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  isOpen
-                    ? 'bg-slate-50/70 border-blue-300 shadow-xs'
-                    : 'bg-white hover:bg-slate-50/50 border-slate-200/90'
-                }`}
+                initial={false}
+                animate={{
+                  backgroundColor: isOpen ? 'rgba(248, 250, 252, 0.9)' : 'rgba(255, 255, 255, 1)',
+                  borderColor: isOpen ? 'rgba(147, 197, 253, 1)' : 'rgba(226, 232, 240, 0.9)',
+                }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="rounded-2xl border overflow-hidden shadow-2xs hover:shadow-xs transition-shadow"
               >
                 <button
                   type="button"
@@ -81,21 +84,34 @@ export const FaqSection: React.FC = () => {
                   <span className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                     {faq.question}
                   </span>
-                  <div
-                    className={`w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 transition-transform duration-200 shrink-0 ${
-                      isOpen ? 'rotate-180 bg-blue-100 text-blue-700' : ''
+                  <motion.div
+                    animate={{ rotate: isOpen ? 180 : 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                      isOpen ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'
                     }`}
                   >
                     <ChevronDown className="w-4 h-4" />
-                  </div>
+                  </motion.div>
                 </button>
 
-                {isOpen && (
-                  <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <p>{faq.answer}</p>
-                  </div>
-                )}
-              </div>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.28, ease: [0.04, 0.62, 0.23, 0.98] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100/80">
+                        <p>{faq.answer}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             );
           })}
         </div>

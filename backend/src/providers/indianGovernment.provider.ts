@@ -1,6 +1,6 @@
 import { EvidenceProvider, RawEvidenceItem, SearchOptions } from './provider.interface.js';
 import { extractRootDomain, isValidHttpUrl } from '../utils/url.utils.js';
-import { sanitizeUntrustedSnippet, normalizeClaimQuery } from '../utils/text.utils.js';
+import { sanitizeUntrustedSnippet, normalizeClaimQuery, containsDevanagari } from '../utils/text.utils.js';
 
 interface GovPortal {
   domain: string;
@@ -36,6 +36,9 @@ export class IndianGovernmentProvider implements EvidenceProvider {
     try {
       // Normalize query and strip conversational questions
       const normalizedQ = normalizeClaimQuery(query);
+      const isHindi = containsDevanagari(normalizedQ);
+      const wikiHost = isHindi ? 'hi.wikipedia.org' : 'en.wikipedia.org';
+
       const cleanKeywords = encodeURIComponent(
         normalizedQ
           .replace(/[^\w\s\u0900-\u097F]/g, ' ')
@@ -43,8 +46,8 @@ export class IndianGovernmentProvider implements EvidenceProvider {
           .slice(0, 80)
       );
 
-      // Query public knowledge repository with India context
-      const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${cleanKeywords}+India&utf8=&format=json&srlimit=3`;
+      // Query public knowledge repository with India context (Hindi Wiki for Devanagari)
+      const url = `https://${wikiHost}/w/api.php?action=query&list=search&srsearch=${cleanKeywords}${isHindi ? '' : '+India'}&utf8=&format=json&srlimit=3`;
 
       const response = await fetch(url, {
         headers: {
@@ -85,12 +88,12 @@ export class IndianGovernmentProvider implements EvidenceProvider {
 
         for (const hit of searchHits) {
           if (!hit.title) continue;
-          const pageUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(hit.title.replace(/\s+/g, '_'))}`;
+          const pageUrl = `https://${wikiHost}/wiki/${encodeURIComponent(hit.title.replace(/\s+/g, '_'))}`;
 
           results.push({
             title: `Public Record & Reference: ${hit.title}`,
             url: pageUrl,
-            domain: 'wikipedia.org',
+            domain: `${wikiHost}`,
             snippet: sanitizeUntrustedSnippet(hit.snippet?.replace(/<[^>]+>/g, '') || ''),
             publishedDate: hit.timestamp ? hit.timestamp.slice(0, 10) : undefined,
             provider: 'Public Information Registry (India Reference)',

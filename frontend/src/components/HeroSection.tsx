@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, useSpring, useMotionValue } from 'motion/react';
 import { 
   ArrowRight, 
   ExternalLink, 
@@ -12,6 +12,7 @@ import {
   Layers,
   Database
 } from 'lucide-react';
+import { ParticleField } from './ParticleField';
 
 interface HeroSectionProps {
   onStartInvestigation: () => void;
@@ -22,8 +23,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onStartInvestigation,
   onExploreTechnology,
 }) => {
-  // Cursor-responsive perspective state
-  const [rotate, setRotate] = useState({ x: 0, y: 0 });
+  // Cursor-responsive perspective state with spring smoothing
+  const rotateXVal = useMotionValue(0);
+  const rotateYVal = useMotionValue(0);
+  const springRotateX = useSpring(rotateXVal, { stiffness: 180, damping: 25 });
+  const springRotateY = useSpring(rotateYVal, { stiffness: 180, damping: 25 });
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -35,17 +40,22 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
     const centerY = rect.height / 2;
 
     // Subtle 3D tilt (max 6 degrees to maintain elegance and legibility)
-    const rotateX = ((y - centerY) / centerY) * -5;
-    const rotateY = ((x - centerX) / centerX) * 6;
-    setRotate({ x: rotateX, y: rotateY });
+    const rotX = ((y - centerY) / centerY) * -6;
+    const rotY = ((x - centerX) / centerX) * 7;
+    rotateXVal.set(rotX);
+    rotateYVal.set(rotY);
   };
 
   const handleMouseLeave = () => {
-    setRotate({ x: 0, y: 0 });
+    rotateXVal.set(0);
+    rotateYVal.set(0);
   };
 
   return (
     <section className="relative pt-32 pb-20 sm:pt-36 sm:pb-28 lg:pt-40 lg:pb-32 overflow-hidden bg-[#F8FAFC]">
+      {/* 3D Three.js Interactive Particle Field Background */}
+      <ParticleField />
+
       {/* Delicate background illumination and grid */}
       <div className="absolute inset-0 bg-grid-subtle opacity-70 pointer-events-none" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[450px] bg-zinc-900/[0.03] rounded-full blur-3xl pointer-events-none" />
@@ -118,10 +128,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
             onMouseLeave={handleMouseLeave}
             className="lg:col-span-6 relative perspective-1200 py-6 select-none"
           >
-            <div
-              className="relative w-full max-w-lg mx-auto transform-style-3d transition-transform duration-200 ease-out"
+            <motion.div
+              className="relative w-full max-w-lg mx-auto transform-style-3d will-change-transform"
               style={{
-                transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
+                rotateX: springRotateX,
+                rotateY: springRotateY,
               }}
             >
               {/* Connecting Ambient SVG Pulse Lines */}
@@ -274,7 +285,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 </p>
               </div>
 
-            </div>
+            </motion.div>
           </div>
 
         </div>

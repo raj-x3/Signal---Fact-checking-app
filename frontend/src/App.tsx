@@ -53,7 +53,12 @@ export default function App() {
   const handleScrollToExplorer = () => {
     const el = document.getElementById('evidence-explorer');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      const topOffset = 85;
+      const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+      window.scrollTo({
+        top: elementPosition - topOffset,
+        behavior: 'smooth',
+      });
     }
   };
 

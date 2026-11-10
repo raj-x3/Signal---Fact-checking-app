@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { 
   Sparkles, 
   ArrowRight, 
@@ -69,10 +70,13 @@ export const ClaimInputPanel: React.FC<ClaimInputPanelProps> = ({ onStartInvesti
             {PRESET_CLAIMS.map((preset) => {
               const isSelected = selectedPresetId === preset.id;
               return (
-                <button
+                <motion.button
                   key={preset.id}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                   onClick={() => handleSelectPreset(preset)}
-                  className={`text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer ${
+                  className={`text-left p-3 rounded-xl border transition-colors duration-200 cursor-pointer ${
                     isSelected
                       ? 'bg-blue-50/70 border-blue-300 ring-2 ring-blue-500/20 shadow-xs'
                       : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 shadow-2xs'
@@ -85,7 +89,7 @@ export const ClaimInputPanel: React.FC<ClaimInputPanelProps> = ({ onStartInvesti
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
                     "{preset.claimText}"
                   </p>
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -157,14 +161,17 @@ export const ClaimInputPanel: React.FC<ClaimInputPanelProps> = ({ onStartInvesti
                 </span>
               </div>
 
-              <button
+              <motion.button
                 type="button"
+                whileHover={{ scale: 1.02, y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                 onClick={handleTriggerInvestigation}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.98] rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-200 cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 hover:shadow-lg hover:shadow-blue-500/25 transition-shadow duration-200 cursor-pointer"
               >
                 <span>Investigate Claim</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </motion.button>
             </div>
 
         </div>

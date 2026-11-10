@@ -7,6 +7,7 @@ import {
   SourceRecord,
 } from '../schemas/factCheck.schema.js';
 import { containsDevanagari, detectLanguage, extractDatesAndYears, normalizeClaimQuery } from '../utils/text.utils.js';
+import { calculateEpistemicConfidence } from '../utils/confidence.utils.js';
 
 export interface ClaimDecompositionResult {
   normalizedClaim: string;
@@ -214,13 +215,20 @@ Output MUST be strict JSON in this exact structure:
         };
       });
 
+      const empiricalConfidence = calculateEpistemicConfidence(finalVerdict, sources, evaluatedSubClaims.length > 0 ? evaluatedSubClaims : subClaims);
+
+      // If Gemma provided an evaluated confidence score, blend it harmoniously with empirical source ground-truth
+      const finalConfidenceScore = typeof parsed.confidenceScore === 'number'
+        ? Math.round(((empiricalConfidence.score * 0.6) + (Math.max(0.1, Math.min(0.99, parsed.confidenceScore)) * 0.4)) * 100) / 100
+        : empiricalConfidence.score;
+
       return {
         verdict: finalVerdict,
         summary: parsed.summary || 'Evidence cross-examination completed by Gemma 4.',
         confidence: {
-          score: typeof parsed.confidenceScore === 'number' ? Math.max(0.1, Math.min(0.99, parsed.confidenceScore)) : 0.85,
-          level: ['High', 'Medium', 'Low'].includes(parsed.confidenceLevel) ? parsed.confidenceLevel : 'Medium',
-          calibrationNote: 'Heuristic model assessment based on source tier agreement; not a calibrated statistical probability.',
+          score: finalConfidenceScore,
+          level: finalConfidenceScore >= 0.85 ? 'High' : finalConfidenceScore < 0.60 ? 'Low' : 'Medium',
+          calibrationNote: empiricalConfidence.calibrationNote,
         },
         subClaims: evaluatedSubClaims.length > 0 ? evaluatedSubClaims : subClaims,
         limitations: parsed.limitations || ['Retrieved records reflect currently available public registry data.'],
@@ -345,14 +353,13 @@ Output MUST be strict JSON in this exact structure:
       };
     });
 
+    // Calculate authentic empirical confidence from retrieved records, authority tiers, and stance consensus
+    const empiricalConfidence = calculateEpistemicConfidence(verdict, sources, updatedSubClaims);
+
     return {
       verdict,
       summary,
-      confidence: {
-        score: sources.length > 3 ? 0.82 : 0.65,
-        level: sources.length > 3 ? 'Medium' : 'Low',
-        calibrationNote: 'Heuristic synthesis engine assessment based on lexical stance matching; not a calibrated statistical probability.',
-      },
+      confidence: empiricalConfidence,
       subClaims: updatedSubClaims,
       limitations: [
         'Provider keys for Gemma 4 or commercial search APIs may be running in fallback mode.',
