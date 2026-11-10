@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -28,7 +28,7 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: (origin, callback) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
       if (!origin) return callback(null, true);
       if (
@@ -62,13 +62,13 @@ const frontendDistPath = fs.existsSync(path.resolve(process.cwd(), 'frontend/dis
 
 if (fs.existsSync(frontendDistPath)) {
   app.use(express.static(frontendDistPath));
-  app.get('*', (req, res, next) => {
+  app.get('*', (req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(frontendDistPath, 'index.html'));
   });
 } else {
   // Catch-all 404 for unknown endpoints when running standalone API
-  app.use((req, res) => {
+  app.use((req: Request, res: Response) => {
     res.status(404).json({
       error: 'Not Found',
       message: `API endpoint '${req.method} ${req.url}' does not exist on SignalCheck backend. Available endpoints: GET /api/health, POST /api/fact-check`,

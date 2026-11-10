@@ -104,9 +104,9 @@ export function calculateEpistemicConfidence(
   // Context-specific, transparent calibration note
   let note = '';
   if (verdict === 'Supported') {
-    note = `Calculated from ${supportingCount} corroborating record(s) (${tier1Count} primary authority, ${tier2Count} accredited fact-checks) with ${Math.round(subClaimCoverageRatio * 100)}% sub-claim coverage. Not a calibrated statistical probability.`;
+    note = `Calculated from ${supportingCount} corroborating record(s) (${tier1Count} primary authority, ${tier2Count} accredited fact-checks) with ${Math.round(subClaimCoverageRatio * 100)}% sub-claim coverage; not a calibrated statistical probability.`;
   } else if (verdict === 'Contradicted') {
-    note = `Calculated from ${contradictingCount} refuting document(s) (${tier1Count} primary notices). Stance consensus: ${Math.round(((contradictingCount) / sources.length) * 100)}%. Not a calibrated statistical probability.`;
+    note = `Calculated from ${contradictingCount} refuting document(s) (${tier1Count} primary notices). Stance consensus: ${Math.round(((contradictingCount) / sources.length) * 100)}%; not a calibrated statistical probability.`;
   } else if (verdict === 'Mixed Evidence') {
     note = `Confidence moderated to reflect factual dispute across ${sources.length} sources (${supportingCount} supporting vs ${contradictingCount} contradicting); not a calibrated statistical probability.`;
   } else {
