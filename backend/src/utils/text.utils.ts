@@ -44,14 +44,38 @@ export function normalizeClaimQuery(raw: string): string {
 }
 
 /**
+ * Decodes HTML entities and normalizes ordinal numbers (e.g. 7th <-> seventh)
+ */
+export function normalizeSemanticText(text: string): string {
+  return text
+    .replace(/&#0*39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\bfirst\b/gi, '1st')
+    .replace(/\bsecond\b/gi, '2nd')
+    .replace(/\bthird\b/gi, '3rd')
+    .replace(/\bfourth\b/gi, '4th')
+    .replace(/\bfifth\b/gi, '5th')
+    .replace(/\bsixth\b/gi, '6th')
+    .replace(/\bseventh\b/gi, '7th')
+    .replace(/\beighth\b/gi, '8th')
+    .replace(/\bninth\b/gi, '9th')
+    .replace(/\btenth\b/gi, '10th')
+    .toLowerCase();
+}
+
+/**
  * Evaluates whether retrieved factual text supports, contradicts, or leaves a claim unresolved.
  */
 export function evaluateFactualStance(
   claimText: string,
   sourceText: string
 ): 'supports' | 'contradicts' | 'neutral' | 'unresolved' {
-  const normClaim = claimText.toLowerCase();
-  const normSource = sourceText.toLowerCase();
+  const normClaim = normalizeSemanticText(claimText);
+  const normSource = normalizeSemanticText(sourceText);
 
   // 1. Contradiction Detection
   const contradictionMarkers = [
@@ -69,6 +93,7 @@ export function evaluateFactualStance(
     'is not the prime minister',
     'never served as',
     'incorrectly claims',
+    'not true',
   ];
   if (contradictionMarkers.some((m) => normSource.includes(m))) {
     return 'contradicts';
@@ -111,9 +136,20 @@ export function evaluateFactualStance(
     }
   }
 
-  // General check: high lexical overlap with no negation
-  const jaccard = calculateJaccardSimilarity(claimText, sourceText);
-  if (jaccard > 0.35 && !/\b(?:not|fake|false|misleading)\b/i.test(normSource)) {
+  // 4. Rank, Geography & Superlative Predicates (e.g., "India" + "7th largest" + "country")
+  const rankMatch = normClaim.match(/\b(\d+(?:st|nd|rd|th))\s+(?:largest|biggest|smallest|highest|populous)\b/i);
+  if (rankMatch) {
+    const rankPhrase = rankMatch[0]; // e.g. "7th largest"
+    if (normSource.includes(rankPhrase) || normSource.includes(rankPhrase.replace(/\s+/, '-'))) {
+      if (!/\b(?:not|fake|false|disputed|misleading)\b/i.test(normSource)) {
+        return 'supports';
+      }
+    }
+  }
+
+  // 5. General check: high lexical overlap with no negation
+  const jaccard = calculateJaccardSimilarity(normClaim, normSource);
+  if (jaccard > 0.25 && !/\b(?:not|fake|false|misleading)\b/i.test(normSource)) {
     return 'supports';
   }
 
@@ -152,6 +188,13 @@ export function sanitizeUntrustedSnippet(rawText: string, maxLength = 600): stri
   if (!rawText) return '';
   
   let cleaned = rawText
+    .replace(/&#0*39;|&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/<[^>]+>/g, '') // strip any html tags
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '')
     .replace(/\s+/g, ' ')
     .replace(/(?:ignore previous instructions|system prompt|you are gemma|developer mode)/gi, '[REDACTED]')
