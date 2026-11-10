@@ -46,8 +46,72 @@ export class GemmaService {
   }
 
   /**
+   * Intelligently cascades through active AI models to ensure 100% availability
+   * without failing if an individual experimental model hits high demand or error.
+   */
+  private getCandidateModels(): string[] {
+    const list = [
+      'gemini-flash-lite-latest',
+      this.primaryModel,
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-flash-latest',
+      'gemma-4-26b-a4b-it',
+    ];
+    return Array.from(new Set(list.filter(Boolean)));
+  }
+
+  /**
+   * Executes AI generation across the candidate cascade with robust timeout
+   */
+  private async generateWithModelFallback(prompt: string, timeoutMs = 15000): Promise<{ text: string; modelUsed: string }> {
+    if (!this.ai) throw new Error('AI client not initialized');
+    const models = this.getCandidateModels();
+    let lastError: Error | null = null;
+
+    for (const model of models) {
+      try {
+        const response = await Promise.race([
+          this.ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+              temperature: 0.1,
+            },
+          }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Model ${model} timed out after ${timeoutMs}ms`)), timeoutMs)
+          ),
+        ]);
+
+        const text = response.text?.trim() || '';
+        if (text.length > 0) {
+          return { text, modelUsed: model };
+        }
+      } catch (err: unknown) {
+        lastError = err as Error;
+        console.warn(`[GemmaService] Model '${model}' attempt encountered: ${(err as Error)?.message?.slice(0, 80)}. Cascading...`);
+      }
+    }
+
+    throw lastError || new Error('All AI models in cascade failed');
+  }
+
+  /**
+   * Safely extracts JSON from LLM responses, stripping codeblocks or preamble
+   */
+  private extractJsonFromText(rawText: string): any {
+    const clean = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) {
+      return JSON.parse(match[0]);
+    }
+    return JSON.parse(clean);
+  }
+
+  /**
    * Phase 1: Decomposes a user claim into atomic falsifiable sub-statements
-   * and generates targeted search queries.
+   * and generates targeted search queries with deep regional language understanding.
    */
   async decomposeClaim(rawClaim: string, explicitLang?: 'en' | 'hi' | 'auto'): Promise<ClaimDecompositionResult> {
     const lang = explicitLang === 'auto' || !explicitLang ? detectLanguage(rawClaim) : explicitLang;
@@ -58,19 +122,19 @@ export class GemmaService {
     }
 
     try {
-      const prompt = `You are Gemma 4, an advanced epistemic reasoning model powering SignalCheck, an India-first fact-checking platform.
-Task: Analyze this claim circulating in India.
-Original Claim: "${rawClaim}"
-Language detected: ${lang === 'hi' ? 'Hindi' : 'English'}
+      const prompt = `You are an advanced AI epistemic reasoning and fact-checking model powering SignalCheck, an India-first truth verification platform.
+Analyze this circulating claim using deep semantic, factual, and regional language understanding:
+Claim: "${rawClaim}"
+Detected language: ${lang === 'hi' ? 'Hindi' : 'English'}
 
 Instructions:
-1. Normalize the exact claim without losing qualifiers, dates, negations, or regional nuances.
-2. Extract key named entities (people, ministries, institutions, locations, laws, schemes).
-3. Break compound claims into 2 to 4 individually falsifiable atomic assertions (sub-claims).
-4. Generate 2 to 4 targeted search queries to find official records, PIB statements, and peer-reviewed/press evidence.
-5. If the claim is in Hindi, preserve the Hindi text and also provide English search query equivalents for broader retrieval.
+1. Understand the claim naturally, accounting for Indian vernacular, regional slang, official terms, Hindi/Hinglish phrasing, or implicit entities.
+2. Normalize the factual assertion without losing qualifiers, dates, or negations.
+3. Extract key entities (people, ministries, institutions, places, statutes).
+4. Decompose compound claims into 2 to 4 individually falsifiable atomic sub-claims.
+5. Generate 2 to 4 targeted search queries to retrieve official government gazettes, PIB releases, and archive records. If the claim is in Hindi or a regional language, include both Hindi and English search queries.
 
-Output MUST be strict JSON in this exact structure:
+Output MUST be valid JSON (do not include extra conversational text):
 {
   "normalizedClaim": "...",
   "namedEntities": ["..."],
@@ -79,7 +143,7 @@ Output MUST be strict JSON in this exact structure:
       "id": "sub-1",
       "statement": "...",
       "verdict": "Unverified",
-      "findingSummary": "Awaiting cross-examination against primary evidence records.",
+      "findingSummary": "Awaiting evidence audit.",
       "sourceCount": 0,
       "relevantSourceIds": []
     }
@@ -87,22 +151,8 @@ Output MUST be strict JSON in this exact structure:
   "searchQueries": ["..."]
 }`;
 
-      const response = await Promise.race([
-        this.ai!.models.generateContent({
-          model: this.primaryModel,
-          contents: prompt,
-          config: {
-            temperature: 0.1,
-            responseMimeType: 'application/json',
-          },
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Gemma decomposition timed out after 8000ms`)), 8000)
-        ),
-      ]);
-
-      const responseText = response.text?.trim() || '';
-      const parsed = JSON.parse(responseText);
+      const { text, modelUsed } = await this.generateWithModelFallback(prompt, 10000);
+      const parsed = this.extractJsonFromText(text);
 
       return {
         normalizedClaim: parsed.normalizedClaim || rawClaim,
@@ -121,7 +171,7 @@ Output MUST be strict JSON in this exact structure:
         isGemmaPowered: true,
       };
     } catch (err: unknown) {
-      console.warn(`[GemmaService] Decomposition with ${this.primaryModel} failed: ${(err as Error)?.message}. Falling back to heuristic decomposition.`);
+      console.warn(`[GemmaService] AI decomposition failed: ${(err as Error)?.message}. Falling back to heuristic decomposition.`);
       return this.heuristicDecompose(rawClaim, lang, dates);
     }
   }
@@ -192,22 +242,8 @@ Output MUST be strict JSON in this exact structure:
   "unresolvedQuestions": ["..."]
 }`;
 
-      const response = await Promise.race([
-        this.ai!.models.generateContent({
-          model: this.primaryModel,
-          contents: prompt,
-          config: {
-            temperature: 0.1,
-            responseMimeType: 'application/json',
-          },
-        }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Gemma synthesis timed out after 10000ms`)), 10000)
-        ),
-      ]);
-
-      const responseText = response.text?.trim() || '';
-      const parsed = JSON.parse(responseText);
+      const { text, modelUsed } = await this.generateWithModelFallback(prompt, 18000);
+      const parsed = this.extractJsonFromText(text);
 
       const finalVerdict: ClaimVerdict = ['Supported', 'Contradicted', 'Mixed Evidence', 'Unverified'].includes(parsed.verdict)
         ? parsed.verdict
@@ -227,14 +263,14 @@ Output MUST be strict JSON in this exact structure:
 
       const empiricalConfidence = calculateEpistemicConfidence(finalVerdict, sources, evaluatedSubClaims.length > 0 ? evaluatedSubClaims : subClaims);
 
-      // If Gemma provided an evaluated confidence score, blend it harmoniously with empirical source ground-truth
+      // If AI provided an evaluated confidence score, blend it harmoniously with empirical source ground-truth
       const finalConfidenceScore = typeof parsed.confidenceScore === 'number'
-        ? Math.round(((empiricalConfidence.score * 0.6) + (Math.max(0.1, Math.min(0.99, parsed.confidenceScore)) * 0.4)) * 100) / 100
+        ? Math.round(((empiricalConfidence.score * 0.5) + (Math.max(0.1, Math.min(0.99, parsed.confidenceScore)) * 0.5)) * 100) / 100
         : empiricalConfidence.score;
 
       return {
         verdict: finalVerdict,
-        summary: parsed.summary || 'Evidence cross-examination completed by Gemma 4.',
+        summary: parsed.summary || 'Evidence cross-examination completed by AI fact-checking engine.',
         confidence: {
           score: finalConfidenceScore,
           level: finalConfidenceScore >= 0.85 ? 'High' : finalConfidenceScore < 0.60 ? 'Low' : 'Medium',
@@ -244,10 +280,10 @@ Output MUST be strict JSON in this exact structure:
         limitations: parsed.limitations || ['Retrieved records reflect currently available public registry data.'],
         unresolvedQuestions: parsed.unresolvedQuestions || [],
         isGemmaPowered: true,
-        gemmaModelUsed: this.primaryModel,
+        gemmaModelUsed: modelUsed,
       };
     } catch (err: unknown) {
-      console.warn(`[GemmaService] Synthesis with ${this.primaryModel} failed: ${(err as Error)?.message}. Using heuristic synthesis.`);
+      console.warn(`[GemmaService] AI synthesis failed: ${(err as Error)?.message}. Using heuristic synthesis.`);
       return this.heuristicSynthesize(claim, subClaims, sources, language);
     }
   }
